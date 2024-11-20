@@ -44,18 +44,13 @@ The ranking of the repositories is determined based on several factors:
 - **Ranking**: Results are ranked based on keyword frequency and document relevance.
 - **Barrels**: Inverted index is divided into smaller chunks (barrels) for improved memory management and scalability.
 - **Dynamic Content Addition**: Allows new repositories to be indexed automatically and appear in search results.
-- **System Scalability**: Optimized to handle datasets with over 45,000 GitHub repositories with minimal slowdown.
+- **System Scalability**: Optimized to handle datasets with a large number of GitHub repositories with minimal slowdown.
 - **Web Interface**: A React-based UI to enter search queries, view results, and add new repositories.
 
 ## Technologies Used
 
-- **Backend**: Python (Flask or Django for API)
+- **Backend**: Python (Flask for API)
 - **Frontend**: React.js
-- **Data Source**: GitHub repositories dataset
+- **Data Source**: [GitHub repositories dataset](https://www.kaggle.com/datasets/donbarbos/github-repos)
 - **Storage**: File-based indexing (no databases used)
 
-## Installation
-
-1. **Clone the repository**:
-   ```bash
-   git clone <repository_url>
