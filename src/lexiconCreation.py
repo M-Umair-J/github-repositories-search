@@ -10,18 +10,22 @@ def remove_duplicates_from_list(l):
 current_dir = os.getcwd() # getting the current working directory
 parent_dir = os.path.dirname(current_dir) # using the current working directory to get the parent directory
 
-# reading from the repositories file using csv reader
+
 repositories_data_titles = [] 
 repositories_data= []
-repositories_data_file = open(parent_dir+'/repositoryData/repositories.csv','r')
-reader = csv.reader(repositories_data_file)
+repositories_data_file = parent_dir+'/repositoryData/repositories.csv'
+
+
+# reading from the repositories file using csv reader
 # filtering the name, title and topics fields
-for i in reader:
-    if(i[0] == 'Name'): # skipping the first row containing the field names
-        continue
-    repositories_data_titles.append(f"{i[0]}")
-    repositories_data.append(i[1])
-    repositories_data.append(i[13])
+with open(repositories_data_file,'r') as file:
+    reader = csv.reader(file)
+    for i in reader:
+        if(i[0] == 'Name'): # skipping the first row containing the field names
+            continue
+        repositories_data_titles.append(i[0])
+        repositories_data.append(i[1])
+        repositories_data.append(i[13])
 
 
 repositories_data = " ".join(repositories_data)
@@ -40,9 +44,12 @@ repositories_data = nltk.word_tokenize(repositories_data)
 # removing the stopwords
 filtered_data_list = []
 stop_words = set(nltk.corpus.stopwords.words('english')) # getting common english stopwords
+lemmatizer = nltk.WordNetLemmatizer() # creating a lemmatizer for converting tokens into their base forms
+
 for i in repositories_data:
+    i = i.lower()
     if i.casefold() not in stop_words: # filtereing out the stopwords in the data
-        filtered_data_list.append(i)
+        filtered_data_list.append(lemmatizer.lemmatize(i))
 
 #removing all the duplicates
 filtered_data_list = remove_duplicates_from_list(filtered_data_list)
@@ -50,12 +57,12 @@ repositories_data_titles = remove_duplicates_from_list(repositories_data_titles)
 
 # writting to lexicon file
 z = 1
-lexicon = open(parent_dir+'/repositoryData/lexicon.csv','a')
-for i in filtered_data_list:
-    if not ("".join(i).strip()).isdigit() and not all(char in string.punctuation for char in i) and not len(i)<3: # filtering out elements with pure punctuations, purely numbers or words with less then 3 characters to make sure lexicon has more meaninful words
-        lexicon.write(f"{z} {i} \n")
-    z+=1
-lexicon = open(parent_dir+'/repositoryData/lexicon.csv','a')
-for i in repositories_data_titles:
-    lexicon.write(f"{z} {i} \n")
-    z+=1
+lexicon = parent_dir+'/repositoryData/lexicon.csv'
+with open(lexicon,'w') as lex:
+    for i in filtered_data_list:
+        if not ("".join(i).strip()).isdigit() and not all(char in string.punctuation for char in i) and not len(i)<3: # filtering out elements with pure punctuations, purely numbers or words with less then 3 characters to make sure lexicon has more meaninful words
+            lex.write(f"{z} {i} \n")
+        z+=1
+    for i in repositories_data_titles:
+        lex.write(f"{z} {i} \n")
+        z+=1
