@@ -51,18 +51,22 @@ for i in repositories_data:
     if i.casefold() not in stop_words: # filtereing out the stopwords in the data
         filtered_data_list.append(lemmatizer.lemmatize(i))
 
-#removing all the duplicates
-filtered_data_list = remove_duplicates_from_list(filtered_data_list)
-repositories_data_titles = remove_duplicates_from_list(repositories_data_titles)
+#removing all extra punctuations and stuff and combining the titles and the data lists into filtered_data and then removing duplicates
+filtered_data = []
+for i in filtered_data_list:
+        if not ("".join(i).strip()).isdigit() and not all(char in string.punctuation for char in i) and not len(i)<3: # filtering out elements with pure punctuations, purely numbers or words with less then 3 characters to make sure lexicon has more meaninful words
+            filtered_data.append(i)
+for i in repositories_data_titles:
+    filtered_data.append(i.lower())
 
+filtered_data = remove_duplicates_from_list(filtered_data)
 # writting to lexicon file
-z = 1
+z = 0
 lexicon = parent_dir+'/repositoryData/lexicon.csv'
 with open(lexicon,'w') as lex:
-    for i in filtered_data_list:
-        if not ("".join(i).strip()).isdigit() and not all(char in string.punctuation for char in i) and not len(i)<3: # filtering out elements with pure punctuations, purely numbers or words with less then 3 characters to make sure lexicon has more meaninful words
-            lex.write(f"{z} {i} \n")
+    if z == 0:
+        lex.write("id,word\n")
         z+=1
-    for i in repositories_data_titles:
-        lex.write(f"{z} {i} \n")
+    for i in filtered_data:
+        lex.write(f"{z},{i}\n")
         z+=1
