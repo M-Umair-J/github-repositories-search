@@ -1,0 +1,5 @@
+repositoryData/filtered_repositories.csv
+repositoryData/forward_index.csv
+repositoryData/inverted_index.csv
+repositoryData/lexicon.csv
+repositoryData/repositories.csv
