@@ -1,1 +1,87 @@
+import os
+import csv
+import json
+
+# Get current and parent directories
+current_dir = os.getcwd()
+parent_dir = os.path.dirname(current_dir)
+
+# File paths
+forward_index_file = parent_dir + '/repositoryData/forward_index.csv'
+lexicon_file = parent_dir + '/repositoryData/lexicon.csv'
+inverted_index_file = parent_dir + '/repositoryData/inverted_index.csv'
+
+# Output barrels directories
+lexicon_barrels_dir = parent_dir + '/repositoryData/lexicon_barrels/'
+forward_barrels_dir = parent_dir + '/repositoryData/forward_barrels/'
+inverted_barrels_dir = parent_dir + '/repositoryData/inverted_barrels/'
+
+# Ensure directories exist
+os.makedirs(lexicon_barrels_dir, exist_ok=True)
+os.makedirs(forward_barrels_dir, exist_ok=True)
+os.makedirs(inverted_barrels_dir, exist_ok=True)
+
+# Partition size for barrels
+BARREL_SIZE = 1000  # Adjust this value based on the size of your dataset
+
+# --- Create Lexicon Barrels ---
+def create_lexicon_barrels():
+    with open(lexicon_file, 'r', encoding='utf-8') as lex:
+        reader = csv.DictReader(lex)
+        lexicon_data = list(reader)
+
+    # Split lexicon data into barrels
+    for i in range(0, len(lexicon_data), BARREL_SIZE):
+        barrel_data = lexicon_data[i:i + BARREL_SIZE]
+        barrel_file = f"{lexicon_barrels_dir}lexicon_barrel_{i // BARREL_SIZE}.csv"
+
+        with open(barrel_file, 'w', encoding='utf-8') as barrel:
+            writer = csv.DictWriter(barrel, fieldnames=['word', 'id'])
+            writer.writeheader()
+            writer.writerows(barrel_data)
+
+# --- Create Forward Index Barrels ---
+def create_forward_barrels():
+    with open(forward_index_file, 'r', encoding='utf-8') as forward:
+        reader = csv.DictReader(forward)
+        forward_data = list(reader)
+
+    # Split forward index data into barrels
+    for i in range(0, len(forward_data), BARREL_SIZE):
+        barrel_data = forward_data[i:i + BARREL_SIZE]
+        barrel_file = f"{forward_barrels_dir}forward_barrel_{i // BARREL_SIZE}.csv"
+
+        with open(barrel_file, 'w', encoding='utf-8') as barrel:
+            writer = csv.DictWriter(barrel, fieldnames=['docId', 'words'])
+            writer.writeheader()
+            writer.writerows(barrel_data)
+
+# --- Create Inverted Index Barrels ---
+def create_inverted_barrels():
+    with open(inverted_index_file, 'r', encoding='utf-8') as inverted:
+        reader = csv.DictReader(inverted)
+        inverted_data = list(reader)
+
+    # Split inverted index data into barrels
+    for i in range(0, len(inverted_data), BARREL_SIZE):
+        barrel_data = inverted_data[i:i + BARREL_SIZE]
+        barrel_file = f"{inverted_barrels_dir}inverted_barrel_{i // BARREL_SIZE}.csv"
+
+        with open(barrel_file, 'w', encoding='utf-8') as barrel:
+            writer = csv.DictWriter(barrel, fieldnames=['word_id', 'documents'])
+            writer.writeheader()
+            writer.writerows(barrel_data)
+
+# --- Main Execution ---
+if __name__ == "__main__":
+    print("Creating lexicon barrels...")
+    create_lexicon_barrels()
+
+    print("Creating forward index barrels...")
+    create_forward_barrels()
+
+    print("Creating inverted index barrels...")
+    create_inverted_barrels()
+
+    print("Barrels created successfully!")
 
