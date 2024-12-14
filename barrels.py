@@ -9,7 +9,7 @@ nltk.download('stopwords')
 nltk.download('wordnet')
 
 # Load the lexicon and document dataset
-lexicons_df = pd.read_csv('C:/Users/Saim Tariq/Desktop/DSA project/github-repositories-search/repositoryData/lexicons_output.csv')
+lexicons_df = pd.read_csv('github-repositories-clone\lexicon.csv')
 dataset_df = pd.read_csv('C:/Users/Saim Tariq/Desktop/DSA project/github-repositories-search/repositoryData/documents_with_ids.csv')
 
 # Create a map of lexicon words to their corresponding lexicon ids
