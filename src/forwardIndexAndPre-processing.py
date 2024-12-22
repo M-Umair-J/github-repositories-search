@@ -22,7 +22,7 @@ with open(repositories_data_file, 'r', encoding='utf-8') as file:
     # headers = next(reader)
     # rows = [row for row in reader]  
     field_names = ['url','title','data','tags']
-    filtered_repositories_file.write(field_names[0]+","+field_names[1]+","+field_names[2]+","+field_names[1]+"\n")
+    filtered_repositories_file.write(field_names[0]+","+field_names[1]+","+field_names[2]+","+field_names[3]+"\n")
     for i in reader:
         strf = i['Description']
         strf2 = i['Topics']
@@ -52,7 +52,7 @@ with open(repositories_data_file, 'r', encoding='utf-8') as file:
         data_list = f"\"{i['URL']}\""+","+i['Name'].lower()+","+data_list+","+filtered_tags_list
         filtered_repositories_file.write(data_list+"\n")
 
-
+filtered_repositories_file.close()
 forward_index = {} # creating the dictionary for forward index to store key value pairs of docId and word ids
 lexicon = {} # creating the dictionary for lexicon to store key value pairs of words and their ids (loaded from the lexicon file)
 with open(parent_dir+'/repositoryData/lexicon.csv', 'r', encoding='utf-8') as lex:
@@ -60,6 +60,7 @@ with open(parent_dir+'/repositoryData/lexicon.csv', 'r', encoding='utf-8') as le
     for row in reader:
         lexicon[row['word']] = row['id'] # mapping words to their ids in dictionary
 
+# creating the forward index
 with open(parent_dir+'/repositoryData/filtered_repositories.csv', 'r', encoding='utf-8') as filtered:
     reader = csv.reader(filtered)
     header = next(reader)
@@ -71,22 +72,22 @@ with open(parent_dir+'/repositoryData/filtered_repositories.csv', 'r', encoding=
         word_ids_with_positions = []
         id_position_pairs = {} # creating mapping for words and their respective postions in the document
 
-        if title in lexicon:
+        if title.lower() in lexicon:
             id_position_pairs[lexicon[title]] = 't' # since (repositories have a single word title so we are using 't' to represent title position which will be later used for better weightage calculation)
             word_ids_with_positions.append(id_position_pairs)
         for position,word in enumerate(document):
+            # if word in lexicon:
+            id_position_pairs={}
             if word in lexicon:
-                id_position_pairs={}
                 id_position_pairs[lexicon[word]] = position
                 word_ids_with_positions.append(id_position_pairs)
         for word in tags:
+            id_position_pairs={}
             if word in lexicon:
-                id_position_pairs={}
                 id_position_pairs[lexicon[word]] = 'i' # since the position of the words in tags don't matter in the context searching so we are using 'i' to represent that the position is irrelevant if the word appears in the tags
                 word_ids_with_positions.append(id_position_pairs)
         forward_index[row[0]] = word_ids_with_positions # mapping documents to their respective word ids and their positions
         
-
 # writting the forward index to a csv file
 with open(parent_dir+'/repositoryData/forward_index.csv','w',encoding = 'utf-8') as forward: 
     writer = csv.writer(forward)

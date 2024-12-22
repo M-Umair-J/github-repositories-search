@@ -4,7 +4,7 @@ import nltk
 import string
 
 def remove_duplicates_from_list(l):
-    return list(dict.fromkeys(l))
+    return list(set(l))
 
 
 current_dir = os.getcwd() # getting the current working directory
@@ -29,16 +29,14 @@ with open(repositories_data_file,'r') as file:
 
 
 repositories_data = " ".join(repositories_data)
-repositories_data_titles = " ".join(repositories_data_titles)
+# repositories_data_titles = " ".join(repositories_data_titles)
 
 #removing the unnecassary characters
 remove_characters = "[]',"
 for i in remove_characters:
     repositories_data = repositories_data.replace(i,'')
 
-
-# tokenizing the string
-repositories_data_titles = nltk.word_tokenize(repositories_data_titles)
+# tokenizing the data
 repositories_data = nltk.word_tokenize(repositories_data)
 
 # removing the stopwords
@@ -56,10 +54,13 @@ filtered_data = []
 for i in filtered_data_list:
         if not ("".join(i).strip().isdigit()) and not all(char in string.punctuation for char in i) and not len(i)<3: # filtering out elements with pure punctuations, purely numbers or words with less then 3 characters to make sure lexicon has more meaninful words
             filtered_data.append(i)
+
+
 for i in repositories_data_titles:
     filtered_data.append(i.lower())
 
 filtered_data = remove_duplicates_from_list(filtered_data)
+
 # writting to lexicon file
 z = 0
 lexicon = parent_dir+'/repositoryData/lexicon.csv'
