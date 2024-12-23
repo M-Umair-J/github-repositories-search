@@ -17,7 +17,7 @@ Y_to_Z = {}
 other = {}
 
 # creating a mapping of barrels and their names
-barrel_names = {'A_to_D':A_to_D,'E to H':E_to_H,'I to L':I_to_L,'M to P':M_to_P,'Q to T':Q_to_T,'U to X':U_to_X,'Y to Z':Y_to_Z,'Other':other}
+barrel_names = {'A_to_D':A_to_D,'E_to_H':E_to_H,'I_to_L':I_to_L,'M_to_P':M_to_P,'Q_to_T':Q_to_T,'U_to_X':U_to_X,'Y_to_Z':Y_to_Z,'Other':other}
 
 # reading lexicon file and creating barrels
 with open(parent_dir + '/repositoryData/lexicon.csv', 'r') as lexicon_file:

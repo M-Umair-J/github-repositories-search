@@ -1,5 +1,6 @@
 import pandas as pd
 import os
+from config import config
 
 current_dir = os.getcwd() # getting the current working directory
 parent_dir = os.path.dirname(current_dir) # using the current working directory to get the parent directory
@@ -8,9 +9,12 @@ parent_dir = os.path.dirname(current_dir) # using the current working directory 
 inverted_index_df = pd.read_csv(parent_dir+'/repositoryData/inverted_index.csv')
 
 # Define the size of each partition (bucket size)
+
 partition_size = 10000
 total_word_ids = len(inverted_index_df)  # Total number of word IDs
 total_partitions = total_word_ids // partition_size + (1 if total_word_ids % partition_size != 0 else 0)  # Total partitions
+
+config.update_total_partitions(total_partitions)  # Update the total partitions in the config file
 
 # Add a column for partition number based on word_id or row index
 inverted_index_df['partition'] = inverted_index_df['word_id'] % total_partitions
