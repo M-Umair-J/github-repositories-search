@@ -1,0 +1,18 @@
+{
+    "compilerOptions": {
+      "target": "ES2022",                       // Use ES2022 as the target version
+      "module": "ESNext",                        // Use the latest ECMAScript module system
+      "jsx": "react",                            // Enable JSX support for React
+      "moduleResolution": "node",                // Use Node-style module resolution
+      "allowJs": true,                           // Allow JavaScript files in the project
+      "strict": true,                            // Enable strict mode for better linting
+      "noUnusedLocals": true,                    // Warn about unused variables
+      "noUnusedParameters": true,                // Warn about unused function parameters
+      "noFallthroughCasesInSwitch": true         // Prevent fall-through in switch statements
+    },
+    "include": [
+      "src/**/*.js",                             // Include all JavaScript files in the `src` folder
+      "src/**/*.jsx"                             // Include all JSX files in the `src` folder
+    ]
+  }
+  
