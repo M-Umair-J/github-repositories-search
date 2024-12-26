@@ -4,6 +4,8 @@ import csv
 from config import config
 import ast
 import sys
+import time
+import threading
 
 total_partitions = config.get_total_partitions()
 
@@ -92,6 +94,7 @@ parent_dir = os.path.dirname(current_dir) # using the current working directory 
 lemmatizer = nltk.WordNetLemmatizer()
 characters_of_interest = ['/',',','.','-','_']
 query = input("write the search\n")
+start_time = time.perf_counter()
 broken_query = query
 for i in characters_of_interest:
     if i in query:
@@ -105,15 +108,25 @@ for i in broken_query:
 query_list = nltk.word_tokenize(query)
 query_list = [lemmatizer.lemmatize(w) for w in query_list]
 
-for i in lemmatized_broken_query:
-    query_list.append(i)
-
-list_of_resuls = []
 lexicon= {}
 lexicon_word_to_id = {}
-lexicon,lexicon_word_to_id = find_the_word_ids(query_list)
 
-finalList = []
+lexicon_for_broken_query = {}
+lexicon_word_to_id_for_broken_query = {}
+
+
+t1 = threading.Thread(target=lambda: find_the_word_ids(query_list))
+t2 = threading.Thread(target=lambda: find_the_word_ids(lemmatized_broken_query))
+t1.start()
+t2.start()
+t1.join()
+t2.join()
+lexicon, lexicon_word_to_id = find_the_word_ids(query_list)
+lexicon_for_broken_query, lexicon_word_to_id_for_broken_query = find_the_word_ids(lemmatized_broken_query)
+
+
+
+finalList = {}
 for i in lexicon:
     partition = int(i)%total_partitions
     doctList = []
@@ -122,11 +135,40 @@ for i in lexicon:
         for row in inverted_index_reader:
             if i == row['word_id']:
                 doctList = ast.literal_eval(row['documents'])
-                doctList = sorted(doctList.items(), key=lambda x: x[1], reverse=True)
                 break
+            
+    for j in doctList:
+        if j in finalList:
+            finalList[j] += doctList[j]+20
+            continue
+        finalList.update({j:doctList[j]})
+    
+for i in lexicon_for_broken_query:
+    partition = int(i)%total_partitions
+    doctList = []
+    with open(parent_dir+'/repositoryData/invertedIndexBarrels/partition_'+str(partition)+'.csv', 'r') as inverted_index_file:
+        inverted_index_reader = csv.DictReader(inverted_index_file)
+        for row in inverted_index_reader:
+            if i == row['word_id']:
+                doctList = ast.literal_eval(row['documents'])
+                break
+            
+    for j in doctList:
+        if j in finalList:
+            finalList[j] += doctList[j]+20
+            continue
+        finalList.update({j:doctList[j]})
+results = sorted(finalList.items(), key=lambda x: x[1], reverse=True)
 
-        for i in doctList:
-            finalList.append(i)
+end_time = time.perf_counter()
+elapsed_time = end_time - start_time
+print(f"Time taken to search: {elapsed_time} seconds")
+j = 1
+for i in results:
+    if (j<11):
+        print(i[0])
+    j+=1
 
-for i in finalList:
-    print(i[0])
+
+
+
