@@ -5,128 +5,109 @@ from config import config
 import ast
 import sys
 
+# Configuration
 total_partitions = config.get_total_partitions()
 
-def find_the_word_ids(words):
-    lexicon= {}
-    lexicon_word_to_id = {}
-    for i in words:
-        i = i.lower()
-        if i[0] in 'abcd':
-            lex_file = open(parent_dir+'/repositoryData/lexicon_barrels/A_to_D.csv', 'r')
-            lex_reader = csv.DictReader(lex_file)
-            for row in lex_reader:
-                if i == row['words']:
-                    lexicon[row['id']] = row['words']
-                    lexicon_word_to_id[row['words']] = row['id']
-        elif i[0] in 'efgh':   
-            lex_file = open(parent_dir+'/repositoryData/lexicon_barrels/E_to_H.csv', 'r')
-            lex_reader = csv.DictReader(lex_file)
-            for row in lex_reader:
-                if i == row['words']:
-                    lexicon[row['id']] = row['words']
-                    lexicon_word_to_id[row['words']] = row['id']
-
-        elif i[0] in 'ijkl':
-            lex_file = open(parent_dir+'/repositoryData/lexicon_barrels/I_to_L.csv', 'r')
-            lex_reader = csv.DictReader(lex_file)
-            for row in lex_reader:
-                if i == row['words']:
-                    lexicon[row['id']] = row['words']
-                    lexicon_word_to_id[row['words']] = row['id']
-
-        elif i[0] in 'mnop':
-            lex_file = open(parent_dir+'/repositoryData/lexicon_barrels/M_to_P.csv', 'r')
-            lex_reader = csv.DictReader(lex_file)
-            for row in lex_reader:
-                if i == row['words']:
-                    lexicon[row['id']] = row['words']
-                    lexicon_word_to_id[row['words']] = row['id']
-
-        elif i[0] in 'qrst':
-            lex_file = open(parent_dir+'/repositoryData/lexicon_barrels/Q_to_T.csv', 'r')
-            lex_reader = csv.DictReader(lex_file)
-            for row in lex_reader:
-                if i == row['words']:
-                    lexicon[row['id']] = row['words']
-                    lexicon_word_to_id[row['words']] = row['id']
-
-        elif i[0] in 'uvwx':
-            lex_file = open(parent_dir+'/repositoryData/lexicon_barrels/U_to_X.csv', 'r')
-            lex_reader = csv.DictReader(lex_file)
-            for row in lex_reader:
-                if i == row['words']:
-                    lexicon[row['id']] = row['words']
-                    lexicon_word_to_id[row['words']] = row['id']
-
-        elif i[0] in 'yz':
-            lex_file = open(parent_dir+'/repositoryData/lexicon_barrels/Y_to_Z.csv', 'r')
-            lex_reader = csv.DictReader(lex_file)
-            for row in lex_reader:
-                if i == row['words']:
-                    lexicon[row['id']] = row['words']
-                    lexicon_word_to_id[row['words']] = row['id']
-
-        else:
-            lex_file = open(parent_dir+'/repositoryData/lexicon_barrels/Other.csv', 'r')
-            lex_reader = csv.DictReader(lex_file)
-            for row in lex_reader:
-                if i == row['words']:
-                    lexicon[row['id']] = row['words']
-                    lexicon_word_to_id[row['words']] = row['id']
-    return lexicon, lexicon_word_to_id
-
-
-# increasing csv field size limit to ensure proper loading of data from csv files
+# Increase CSV field size limit to handle large files
 maxInt = sys.maxsize
 while True:
     try:
         csv.field_size_limit(maxInt)
         break
     except OverflowError:
-        maxInt = int(maxInt/10)
+        maxInt = int(maxInt / 10)
 
+# Paths
+current_dir = os.getcwd()
+parent_dir = os.path.dirname(current_dir)
 
-current_dir = os.getcwd() # getting the current working directory
-parent_dir = os.path.dirname(current_dir) # using the current working directory to get the parent directory
+# Initialize Lemmatizer
 lemmatizer = nltk.WordNetLemmatizer()
-characters_of_interest = ['/',',','.','-','_']
-query = input("write the search\n")
-broken_query = query
-for i in characters_of_interest:
-    if i in query:
-        broken_query = broken_query.replace(i, ' ')
 
-broken_query = broken_query.split()
-lemmatized_broken_query = []
-for i in broken_query:
-    lemmatized_broken_query.append(lemmatizer.lemmatize(i.lower()))
+# Characters to replace in the query
+characters_of_interest = ['/', ',', '.', '-', '_']
 
-query_list = nltk.word_tokenize(query)
-query_list = [lemmatizer.lemmatize(w) for w in query_list]
+def load_lexicon_files():
+    """Pre-load all lexicon files into memory."""
+    lexicon_data = {}
+    barrels = [
+        ('A_to_D.csv', 'abcd'),
+        ('E_to_H.csv', 'efgh'),
+        ('I_to_L.csv', 'ijkl'),
+        ('M_to_P.csv', 'mnop'),
+        ('Q_to_T.csv', 'qrst'),
+        ('U_to_X.csv', 'uvwx'),
+        ('Y_to_Z.csv', 'yz'),
+        ('Other.csv', '')
+    ]
 
-for i in lemmatized_broken_query:
-    query_list.append(i)
+    for file_name, letters in barrels:
+        file_path = os.path.join(parent_dir, 'repositoryData', 'lexicon_barrels', file_name)
+        with open(file_path, 'r', encoding='utf-8') as lex_file:
+            reader = csv.DictReader(lex_file)
+            for row in reader:
+                first_letter = row['words'][0].lower() if row['words'] else ''
+                if not letters or first_letter in letters:
+                    lexicon_data[row['words'].lower()] = row
 
-list_of_resuls = []
-lexicon= {}
-lexicon_word_to_id = {}
-lexicon,lexicon_word_to_id = find_the_word_ids(query_list)
+    return lexicon_data
 
-finalList = []
-for i in lexicon:
-    partition = int(i)%total_partitions
-    doctList = []
-    with open(parent_dir+'/repositoryData/invertedIndexBarrels/partition_'+str(partition)+'.csv', 'r') as inverted_index_file:
-        inverted_index_reader = csv.DictReader(inverted_index_file)
-        for row in inverted_index_reader:
-            if i == row['word_id']:
-                doctList = ast.literal_eval(row['documents'])
-                doctList = sorted(doctList.items(), key=lambda x: x[1], reverse=True)
-                break
+def find_the_word_ids(query_list, lexicon_data):
+    """Find word IDs from pre-loaded lexicon data."""
+    lexicon = {}
+    lexicon_word_to_id = {}
+    
+    for word in query_list:
+        word = word.lower()
+        if word in lexicon_data:
+            entry = lexicon_data[word]
+            lexicon[entry['id']] = entry['words']
+            lexicon_word_to_id[entry['words']] = entry['id']
 
-        for i in doctList:
-            finalList.append(i)
+    return lexicon, lexicon_word_to_id
 
-for i in finalList:
-    print(i[0])
+def search_documents(lexicon):
+    """Search documents using word IDs in the inverted index."""
+    final_list = []
+    for word_id in lexicon:
+        partition = int(word_id) % total_partitions
+        file_path = os.path.join(parent_dir, 'repositoryData', 'invertedIndexBarrels', f'partition_{partition}.csv')
+
+        with open(file_path, 'r', encoding='utf-8') as inverted_index_file:
+            reader = csv.DictReader(inverted_index_file)
+            for row in reader:
+                if word_id == row['word_id']:
+                    doc_list = ast.literal_eval(row['documents'])
+                    sorted_docs = sorted(doc_list.items(), key=lambda x: x[1], reverse=True)
+                    final_list.extend(sorted_docs)
+                    break
+
+    return final_list
+
+def process_query(query):
+    """Process and lemmatize the input query."""
+    for char in characters_of_interest:
+        query = query.replace(char, ' ')
+    
+    tokens = nltk.word_tokenize(query)
+    lemmatized_query = [lemmatizer.lemmatize(token.lower()) for token in tokens]
+    return lemmatized_query
+
+# Main Execution
+if __name__ == "__main__":
+    # Preload lexicon files
+    lexicon_data = load_lexicon_files()
+
+    # Input query
+    query = input("Write the search query:\n")
+    query_list = process_query(query)
+
+    # Find word IDs
+    lexicon, lexicon_word_to_id = find_the_word_ids(query_list, lexicon_data)
+
+    # Search documents
+    final_results = search_documents(lexicon)
+
+    # Output results
+    for doc in final_results:
+        print(doc[0])
