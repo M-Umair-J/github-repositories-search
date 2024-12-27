@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Github, Plus, Flame, Star, GitFork } from 'lucide-react';
 import { SearchBar } from './components/SearchBar';
 import { RepositoryForm } from './components/RepositoryForm';
@@ -10,21 +10,41 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const handleAddRepository = (formData) => {
+  // Fetch repositories from the backend
+  useEffect(() => {
+    const fetchRepositories = async () => {
+      const response = await fetch('http://localhost:5000/api/repositories');
+      if (response.ok) {
+        const data = await response.json();
+        setRepositories(data);
+      }
+    };
+    fetchRepositories();
+  }, []); // Only run on mount
+
+  // Add a new repository via API
+  const handleAddRepository = async (formData) => {
     const newRepository = {
-      id: crypto.randomUUID(),
       title: formData.title,
       description: formData.description,
       url: formData.url,
       tags: formData.tags.split(',').map(tag => tag.trim()).filter(Boolean),
-      stars: 0, // Initial star count
-      forks: 0, // Initial fork count
-      createdAt: new Date(),
     };
-    setRepositories([newRepository, ...repositories]);
-    setIsModalOpen(false);
+
+    const response = await fetch('http://localhost:5000/api/repositories', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newRepository),
+    });
+
+    if (response.ok) {
+      const addedRepository = await response.json();
+      setRepositories([addedRepository, ...repositories]);
+      setIsModalOpen(false);
+    }
   };
 
+  // Filter repositories based on the search query
   const filteredRepositories = useMemo(() => {
     const query = searchQuery.toLowerCase();
     return repositories.filter(repo =>
