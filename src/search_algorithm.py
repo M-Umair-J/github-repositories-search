@@ -4,6 +4,8 @@ import csv
 from config import config
 import ast
 import sys
+import time
+import threading
 
 total_partitions = config.get_total_partitions()
 
@@ -84,7 +86,6 @@ for word_id in lexicon:
         for row in inverted_index_reader:
             if word_id == row['word_id']:
                 doctList = ast.literal_eval(row['documents'])
-                doctList = sorted(doctList.items(), key=lambda x: x[1], reverse=True)
                 break
 
     # Add the sorted documents to the final list
