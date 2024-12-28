@@ -16,10 +16,12 @@ function App() {
     if (searchQuery) {
       const fetchSearchResults = async () => {
         try {
-          const response = await fetch(`http://localhost:5000/api/repositories/search?query=${encodeURIComponent(searchQuery)}`);
+          const response = await fetch(
+            `http://localhost:5000/api/repositories/search?query=${encodeURIComponent(searchQuery)}`
+          );
           if (response.ok) {
             const results = await response.json();
-            setSearchResults(results);  // Assuming the response is an array of repositories
+            setSearchResults(results); // Assuming the response is an array of repositories
           } else {
             setSearchResults([]);
             console.error('Failed to fetch search results');
@@ -40,7 +42,7 @@ function App() {
       title: formData.title,
       description: formData.description,
       url: formData.url,
-      tags: formData.tags.split(',').map(tag => tag.trim()).filter(Boolean),
+      tags: formData.tags.split(',').map((tag) => tag.trim()).filter(Boolean),
     };
 
     const response = await fetch('http://localhost:5000/api/repositories', {
@@ -65,13 +67,12 @@ function App() {
           <div className="flex items-center justify-between">
             <div className="flex items-center">
               <Github className="h-8 w-8 text-maroon-500" />
-              <h1 className="ml-3 text-2xl font-bold text-gray-100">GitHub Repository Manager</h1>
+              <h1 className="ml-3 text-2xl font-bold text-gray-100">
+                GitHub Repository Manager
+              </h1>
             </div>
             <div className="flex items-center space-x-4">
-              <SearchBar 
-                searchQuery={searchQuery}
-                onSearchChange={setSearchQuery}
-              />
+              <SearchBar searchQuery={searchQuery} onSearchChange={setSearchQuery} />
               <button
                 onClick={() => setIsModalOpen(true)}
                 className="inline-flex items-center px-4 py-2 border border-maroon-500 rounded-md shadow-sm text-sm font-medium text-maroon-200 bg-maroon-900 hover:bg-maroon-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-maroon-500 transition-colors"
@@ -92,7 +93,8 @@ function App() {
               <h2 className="text-xl font-semibold text-gray-100 mb-4">
                 {searchQuery ? 'Search Results' : 'Your Repositories'}
                 <span className="ml-2 text-sm font-normal text-gray-400">
-                  ({displayedRepositories.length} {displayedRepositories.length === 1 ? 'repository' : 'repositories'})
+                  ({displayedRepositories.length}{' '}
+                  {displayedRepositories.length === 1 ? 'repository' : 'repositories'})
                 </span>
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -117,14 +119,12 @@ function App() {
                       </div>
                     </div>
 
-                    <a
-                      href={repo.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="mt-4 inline-block text-maroon-300 hover:text-maroon-200 text-sm"
+                    <button
+                      onClick={() => window.open(repo.url, '_blank')}
+                      className="mt-4 w-full bg-maroon-600 text-white py-2 rounded-md hover:bg-maroon-700 transition-all"
                     >
                       Go to Repository
-                    </a>
+                    </button>
                   </div>
                 ))}
               </div>
