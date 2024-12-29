@@ -119,12 +119,18 @@ function App() {
                       </div>
                     </div>
 
-                    <button
-                      onClick={() => window.open(repo.url, '_blank')}
-                      className="mt-4 w-full bg-maroon-600 text-white py-2 rounded-md hover:bg-maroon-700 transition-all"
+                    <a
+                      href={repo.document_id}
+                      target='_blank'
                     >
+                      <button 
+                      className="mt-4 w-full bg-maroon-600 text-white py-2 rounded-md hover:bg-maroon-700 transition-all"
+                      
+                      >
+
                       Go to Repository
-                    </button>
+                      </button>
+                    </a>
                   </div>
                 ))}
               </div>
