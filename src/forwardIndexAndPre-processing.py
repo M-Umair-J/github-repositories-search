@@ -3,6 +3,7 @@ import os
 import nltk
 import string
 import pandas as pd
+from collections import defaultdict
 
 
 current_dir = os.getcwd()  

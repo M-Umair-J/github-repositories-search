@@ -1,6 +1,6 @@
 import csv
 import os
-import json
+import ast
 from collections import defaultdict
 from math import log
 
@@ -35,31 +35,30 @@ with open(forward_index, 'r') as file:
     reader = csv.DictReader(file)
     i = 1
     for row in reader:
-        doc_id = row['docId'].strip()
-        words_data = row['words'].strip()
-        doc_id_2 = doc_id
-        words_data = words_data.replace("'", '"') # replacing single quotes with double quotes to make it valid json
-        # convert the words string into a JSON object
-        words = json.loads(words_data)
-        
-        for w in words:
-            if list(w.values())[0] == 't':
-                term_frequency[doc_id][list(w.keys())[0]]+=5
-            elif list(w.values())[0] == 'i':
-                term_frequency[doc_id][list(w.keys())[0]]+=2
-            else:
-                term_frequency[doc_id][list(w.keys())[0]]+=1
-        words_set = set()
-        for w in words:  
-            words_set.add(list(w.keys())[0])
-        for w in words_set:
-            document_frequency[w]+=1
-        
-        # create a JSON object for the row
-        parsed_rows.append({
-            "docId": doc_id,
-            "words": words
-        })
+        try:
+            doc_id = row['docId'].strip()
+            words_data = row['words'].strip()
+            doc_id_2 = doc_id
+            
+            # Use ast.literal_eval instead of json.loads
+            words = ast.literal_eval(words_data)
+            
+            for w in words:
+                if list(w.values())[0] == 't':
+                    term_frequency[doc_id][list(w.keys())[0]] += 5
+                elif list(w.values())[0] == 'i':
+                    term_frequency[doc_id][list(w.keys())[0]] += 2
+                else:
+                    term_frequency[doc_id][list(w.keys())[0]] += 1
+                document_frequency[list(w.keys())[0]] += 1
+            
+            parsed_rows.append({'docId': doc_id, 'words': words})
+            
+        except Exception as e:
+            print(f"Error processing row {i}: {str(e)}")
+            print(f"Problematic data: {words_data}")
+            continue
+        i += 1
 
 
 
@@ -76,17 +75,19 @@ for row in parsed_rows:
             inverted_index[key][document_id] = weightage
             
 
-sorted_inverted_index = {k: inverted_index[k] for k in sorted(inverted_index)}
+# Convert word_ids to integers for sorting
+inverted_index = {int(k): v for k, v in inverted_index.items()}
+sorted_inverted_index = {str(k): inverted_index[k] for k in sorted(inverted_index)}
+
 with open(inverted_index_file, 'w', encoding='utf-8') as inverted_file:
     writer = csv.writer(inverted_file)
     writer.writerow(['word_id', 'documents'])  
     for word_id, documents in sorted_inverted_index.items():
         writer.writerow([word_id, documents])
-
+        
 # writing inverted index to a csv file
 with open(inverted_index_file, 'w', encoding='utf-8') as inverted_file:
     writer = csv.writer(inverted_file)
     writer.writerow(['word_id', 'documents'])  
     for word_id, documents in inverted_index.items():
         writer.writerow([word_id, documents])
-

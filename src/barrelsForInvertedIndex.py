@@ -30,6 +30,3 @@ for partition_number, partition_df in inverted_index_df.groupby('partition'):
     
     # Save the partition to a separate file
     partition_df.to_csv(output_file, index=False)
-    print(f"Saved partition {partition_number} to '{output_file}'.")
-
-print("Partitioning complete. Files saved in the 'partitions' folder.")
