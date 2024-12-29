@@ -104,7 +104,7 @@ function App() {
                     className="bg-gray-900 rounded-lg p-6 shadow-xl hover:shadow-2xl transition-all border border-maroon-800"
                   >
                     <div className="flex justify-between items-start mb-4">
-                      <h3 className="text-lg font-semibold text-gray-100">{repo.title}</h3>
+                      <h3 className="text-lg font-semibold text-gray-100">{repo.document_id.split("/").at(-1)}</h3>
                     </div>
                     <p className="text-gray-400">{repo.description}</p>
 
