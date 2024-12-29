@@ -1,120 +1,146 @@
-import nltk
-import os
 import csv
-from config import config
-import ast
-import sys
-import time
+import os
+import nltk
+import string
+from nltk.tokenize import word_tokenize
+from nltk.stem import WordNetLemmatizer
+lemmatizer = WordNetLemmatizer()
+stop_words = set(nltk.corpus.stopwords.words('english'))
 
-# Configuration
-total_partitions = config.get_total_partitions()
-
-# Increase CSV field size limit to handle large files
-maxInt = sys.maxsize
-while True:
-    try:
-        csv.field_size_limit(maxInt)
-        break
-    except OverflowError:
-        maxInt = int(maxInt / 10)
-
-# Paths
-current_dir = os.getcwd()
-parent_dir = os.path.dirname(current_dir)
-
-# Initialize Lemmatizer
-lemmatizer = nltk.WordNetLemmatizer()
-
-# Characters to replace in the query
-characters_of_interest = ['/', ',', '.', '-', '_']
-
-def load_lexicon_files():
-    """Pre-load all lexicon files into memory."""
-    lexicon_data = {}
-    barrels = [
-        ('A_to_D.csv', 'abcd'),
-        ('E_to_H.csv', 'efgh'),
-        ('I_to_L.csv', 'ijkl'),
-        ('M_to_P.csv', 'mnop'),
-        ('Q_to_T.csv', 'qrst'),
-        ('U_to_X.csv', 'uvwx'),
-        ('Y_to_Z.csv', 'yz'),
-        ('Other.csv', '')
-    ]
-
-    for file_name, letters in barrels:
-        file_path = os.path.join(parent_dir, 'repositoryData', 'lexicon_barrels', file_name)
-        with open(file_path, 'r', encoding='utf-8') as lex_file:
-            reader = csv.DictReader(lex_file)
-            for row in reader:
-                first_letter = row['words'][0].lower() if row['words'] else ''
-                if not letters or first_letter in letters:
-                    lexicon_data[row['words'].lower()] = row
-
-    return lexicon_data
-
-def find_the_word_ids(query_list, lexicon_data):
-    """Find word IDs from pre-loaded lexicon data."""
-    lexicon = {}
-    lexicon_word_to_id = {}
+def process_new_content(repository):
+    current_dir = os.getcwd()
+    parent_dir = os.path.dirname(current_dir)
     
-    for word in query_list:
-        word = word.lower()
-        if word in lexicon_data:
-            entry = lexicon_data[word]
-            lexicon[entry['id']] = entry['words']
-            lexicon_word_to_id[entry['words']] = entry['id']
-
-    return lexicon, lexicon_word_to_id
-
-def search_documents(lexicon):
-    """Search documents using word IDs in the inverted index."""
-    final_list = []
-    for word_id in lexicon:
-        partition = int(word_id) % total_partitions
-        file_path = os.path.join(parent_dir, 'repositoryData', 'invertedIndexBarrels', f'partition_{partition}.csv')
-
-        with open(file_path, 'r', encoding='utf-8') as inverted_index_file:
-            reader = csv.DictReader(inverted_index_file)
-            for row in reader:
-                if word_id == row['word_id']:
-                    doc_list = ast.literal_eval(row['documents'])
-                    sorted_docs = sorted(doc_list.items(), key=lambda x: x[1], reverse=True)
-                    final_list.extend(sorted_docs)
-                    break
-
-    return final_list
-
-def process_query(query):
-    """Process and lemmatize the input query."""
-    for char in characters_of_interest:
-        query = query.replace(char, ' ')
+    # Step 1: Process and add to lexicon
+    new_words = process_for_lexicon(repository, parent_dir)
     
-    tokens = nltk.word_tokenize(query)
-    lemmatized_query = [lemmatizer.lemmatize(token.lower()) for token in tokens]
-    return lemmatized_query
+    # Step 2: Add to filtered repositories
+    doc_url = add_to_filtered_repositories(repository, parent_dir)
+    
+    # Step 3: Update forward index
+    update_forward_index(repository, new_words, doc_url, parent_dir)
+    
+    return doc_url
 
-# Main Execution
-if __name__ == "__main__":
-    # Preload lexicon files
-    lexicon_data = load_lexicon_files()
+def process_for_lexicon(repository, parent_dir):
+    
+    # Combine all text
+    all_text = f"{repository['description']} {' '.join(repository['tags'])}"
+    title = repository['title']
+    # Clean text
+    for char in "[]',":
+        all_text = all_text.replace(char, '')
+    
+    # Process tokens
+    tokens = word_tokenize(all_text)
+    filtered_words = []
+    
+    for token in tokens:
+        token = token.lower()
+        if token not in stop_words:
+            lemmatized = lemmatizer.lemmatize(token)
+            if not (lemmatized.isdigit() or 
+                   all(char in string.punctuation for char in lemmatized) or 
+                   len(lemmatized) < 3):
+                filtered_words.append(lemmatized)
+    filtered_words.append(title.lower())
+    # Get unique words
+    unique_words = set(filtered_words)
+    
+    # Update lexicon
+    lexicon_path = f"{parent_dir}/repositoryData/lexicon.csv"
+    existing_words = {}
+    last_id = 0
+    
+    # Read existing lexicon
+    with open(lexicon_path, 'r') as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            existing_words[row['word']] = row['id']
+            last_id = max(last_id, int(row['id']))
+    
+    # Add new words
+    new_words = {}
+    with open(lexicon_path, 'a', newline='') as f:
+        writer = csv.writer(f)
+        for word in unique_words:
+            if word not in existing_words:
+                last_id += 1
+                writer.writerow([last_id, word])
+                new_words[word] = last_id
+            else:
+                new_words[word] = existing_words[word]
+    
+    return new_words
 
-    # Input query
-    query = input("Write the search query:\n")
-    start_time = time.perf_counter()
-    query_list = process_query(query)
+def add_to_filtered_repositories(repository, parent_dir):
+    filtered_path = f"{parent_dir}/repositoryData/filtered_repositories.csv"
+    
+    # Process description
+    description = repository['description']
+    remove_characters = "[]',"
+    for char in remove_characters:
+        description = description.replace(char, '')
+    
+    desc_tokens = word_tokenize(description)
+    filtered_desc_list = []
+    for token in desc_tokens:
+        token = token.lower()
+        if token not in stop_words:
+            lemmatized = lemmatizer.lemmatize(token)
+            if not lemmatized.isdigit() and not all(char in string.punctuation for char in lemmatized) and len(lemmatized) >= 3:
+                filtered_desc_list.append(lemmatized)
+    
+    # Process tags
+    tags = ' '.join(repository['tags'])
+    for char in remove_characters:
+        tags = tags.replace(char, '')
+    
+    tag_tokens = word_tokenize(tags)
+    filtered_tags_list = []
+    for token in tag_tokens:
+        token = token.lower()
+        if token not in stop_words:
+            filtered_tags_list.append(lemmatizer.lemmatize(token))
+    
+    # Create row dictionary
+    new_row = {
+        'url': f'"{repository["url"].strip()}"',
+        'title': repository['title'].lower(),
+        'data': ' '.join(filtered_desc_list),
+        'tags': ' '.join(filtered_tags_list)
+    }
+    
+    # Write to CSV
+    with open(filtered_path, 'a', newline='') as f:
+        writer = csv.DictWriter(f, fieldnames=['url', 'title', 'data', 'tags'])
+        writer.writerow(new_row)
+    
+    return repository['url']
 
-    # Find word IDs
-    lexicon, lexicon_word_to_id = find_the_word_ids(query_list, lexicon_data)
-
-    # Search documents
-    final_results = search_documents(lexicon)
-    end_time = time.perf_counter()
-    elapsed_time = end_time - start_time
-    print(f"Time taken to search: {elapsed_time} seconds")
-    # Output results
-    # j = 1
-    for doc in final_results:
-        # if(j<11):
-            print(doc[0])
-        # j+=1
+def update_forward_index(repository, word_ids, doc_url, parent_dir):
+    forward_index_path = f"{parent_dir}/repositoryData/forward_index.csv"
+    word_positions = []
+    
+    # Process title
+    title = repository['title'].lower()
+    if title in word_ids:
+        word_positions.append({word_ids[title]: 't'})
+    
+    # Process description tokens
+    desc_tokens = word_tokenize(repository['description'].lower())
+    for pos, token in enumerate(desc_tokens):
+        lemmatized = lemmatizer.lemmatize(token)
+        if lemmatized in word_ids:
+            word_positions.append({word_ids[lemmatized]: pos})
+    
+    # Process tags
+    for tag in repository['tags']:
+        lemmatized = lemmatizer.lemmatize(tag.lower())
+        if lemmatized in word_ids:
+            word_positions.append({word_ids[lemmatized]: 'i'})
+    
+    # Write to forward index
+    with open(forward_index_path, 'a', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow([doc_url, str(word_positions)])

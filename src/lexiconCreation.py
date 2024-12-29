@@ -29,7 +29,7 @@ with open(repositories_data_file,'r') as file:
 
 
 repositories_data = " ".join(repositories_data)
-# repositories_data_titles = " ".join(repositories_data_titles)
+
 
 #removing the unnecassary characters
 remove_characters = "[]',"
