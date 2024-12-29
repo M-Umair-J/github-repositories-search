@@ -6,7 +6,6 @@ app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 
 # Pre-load the lexicon once at the server start
-lexicon_data = search_algorithm.load_lexicon_files()
 
 @app.route('/api/repositories/search', methods=['GET'])
 def search_repositories():
@@ -15,9 +14,7 @@ def search_repositories():
         return jsonify({"error": "Query parameter is required"}), 400
 
     # Use search_algorithm module to process the query and get results
-    query_list = search_algorithm.process_query(query)
-    lexicon, lexicon_word_to_id = search_algorithm.find_the_word_ids(query_list, lexicon_data)
-    final_results = search_algorithm.search_documents(lexicon)
+    final_results = search_algorithm.search(query)
 
     # Format results to return to the frontend
     results = [{"document_id": doc[0], "score": doc[1]} for doc in final_results]
