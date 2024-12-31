@@ -12,30 +12,23 @@ function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Fetch search results from the backend
-  useEffect(() => {
-    if (searchQuery) {
-      const fetchSearchResults = async () => {
-        try {
-          const response = await fetch(
-            `http://localhost:5000/api/repositories/search?query=${encodeURIComponent(searchQuery)}`
-          );
-          if (response.ok) {
-            const results = await response.json();
-            setSearchResults(results); // Assuming the response is an array of repositories
-          } else {
-            setSearchResults([]);
-            console.error('Failed to fetch search results');
-          }
-        } catch (error) {
-          console.error('Error fetching search results:', error);
-          setSearchResults([]);
-        }
-      };
-      fetchSearchResults();
-    } else {
+  const fetchSearchResults = async () => {
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/repositories/search?query=${encodeURIComponent(searchQuery)}`
+      );
+      if (response.ok) {
+        const results = await response.json();
+        setSearchResults(results); // Assuming the response is an array of repositories
+      } else {
+        setSearchResults([]);
+        console.error('Failed to fetch search results');
+      }
+    } catch (error) {
+      console.error('Error fetching search results:', error);
       setSearchResults([]);
     }
-  }, [searchQuery]);
+  };
 
   const handleAddRepository = async (formData) => {
     const newRepository = {
@@ -72,7 +65,7 @@ function App() {
               </h1>
             </div>
             <div className="flex items-center space-x-4">
-              <SearchBar searchQuery={searchQuery} onSearchChange={setSearchQuery} />
+              <SearchBar fetchSearchResults={fetchSearchResults} searchQuery={searchQuery} onSearchChange={setSearchQuery} />
               <button
                 onClick={() => setIsModalOpen(true)}
                 className="inline-flex items-center px-4 py-2 border border-maroon-500 rounded-md shadow-sm text-sm font-medium text-maroon-200 bg-maroon-900 hover:bg-maroon-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-maroon-500 transition-colors"

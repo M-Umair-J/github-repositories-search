@@ -1,7 +1,8 @@
 import React from 'react';
 import { Search } from 'lucide-react';
 
-export function SearchBar({ searchQuery, onSearchChange }) {
+export function SearchBar({ searchQuery, onSearchChange,fetchSearchResults }) {
+  console.log(fetchSearchResults);
   return (
     <div className="relative w-full max-w-xl">
       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -15,6 +16,11 @@ export function SearchBar({ searchQuery, onSearchChange }) {
         placeholder="Search repositories..."
         value={searchQuery}
         onChange={(e) => onSearchChange(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            fetchSearchResults();
+          }
+        }} 
       />
     </div>
   );

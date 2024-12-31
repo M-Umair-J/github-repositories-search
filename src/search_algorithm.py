@@ -5,6 +5,7 @@ from config import config
 import ast
 import sys
 import time
+# from server import load_important_stuff
 
 lemmatizer = nltk.WordNetLemmatizer()
 total_partitions = config.get_total_partitions()
@@ -154,7 +155,30 @@ def search(query):
                 else:
                     finalList.update({j:doctList[j]})
     results = sorted(finalList.items(), key=lambda x: x[1], reverse=True)
-    return results  
+
+    repositories = {}
+    with open(parent_dir + '/repositoryData/repositories_url.csv', 'r', encoding='utf-8') as file:
+    # Create a CSV reader
+        csv_reader = csv.reader(file)
+        
+        # Read through each row in the CSV file
+        for row in csv_reader:
+            if len(row) >= 4:
+                url = row[0]
+                description = row[1]
+                stars = row[2]
+                forks = row[3]
+                # Add the data to the dictionary
+                repositories[url] = (description, stars, forks)
+            else:
+                print(f"Error: {row}")
+
+    # repositories = load_important_stuff()
+    final_results= []
+    for doc in results:
+        final_results.append((doc[0], repositories[doc[0]][0],repositories[doc[0]][1],repositories[doc[0]][2],doc[1]))
+    
+    return final_results  
 
 # Main Execution
 if __name__ == "__main__":
@@ -165,9 +189,10 @@ if __name__ == "__main__":
 
     # Search documents
     final_results = search(query)
+
     end_time = time.perf_counter()
     elapsed_time = end_time - start_time
     print(f"Time taken to search: {elapsed_time} seconds")
     # Output results
-    for doc in final_results:
-        print(doc[0])
+    # for doc in final_results:
+    #     print(doc)

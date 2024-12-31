@@ -1,91 +1,184 @@
-import csv
+import nltk
 import os
-import json
-from collections import defaultdict
-from math import log
+import csv
+from config import config
+import ast
+import sys
+import time
+from server import load_important_stuff
 
-def tf_idf(term_freq,tot_terms,doc_freq,doc_count):
-    tf = term_freq/tot_terms
-    idf = log(doc_count/(1+doc_freq))
-    return tf*idf
-      
-current_dir = os.getcwd()  
-parent_dir = os.path.dirname(current_dir)  
+lemmatizer = nltk.WordNetLemmatizer()
+total_partitions = config.get_total_partitions()
+
+current_dir = os.getcwd() # getting the current working directory
+parent_dir = os.path.dirname(current_dir) # using the current working directory to get the parent directory
+
+def find_the_word_ids(words):
+    lexicon= {}
+    lexicon_word_to_id = {}
+    for i in words:
+        i = i.lower()
+        if i[0] in 'abcd':
+            lex_file = open(parent_dir+'/repositoryData/lexicon_barrels/A_to_D.csv', 'r')
+            lex_reader = csv.DictReader(lex_file)
+            for row in lex_reader:
+                if i == row['words']:
+                    lexicon[row['id']] = row['words']
+                    lexicon_word_to_id[row['words']] = row['id']
+        elif i[0] in 'efgh':   
+            lex_file = open(parent_dir+'/repositoryData/lexicon_barrels/E_to_H.csv', 'r')
+            lex_reader = csv.DictReader(lex_file)
+            for row in lex_reader:
+                if i == row['words']:
+                    lexicon[row['id']] = row['words']
+                    lexicon_word_to_id[row['words']] = row['id']
+
+        elif i[0] in 'ijkl':
+            lex_file = open(parent_dir+'/repositoryData/lexicon_barrels/I_to_L.csv', 'r')
+            lex_reader = csv.DictReader(lex_file)
+            for row in lex_reader:
+                if i == row['words']:
+                    lexicon[row['id']] = row['words']
+                    lexicon_word_to_id[row['words']] = row['id']
+
+        elif i[0] in 'mnop':
+            lex_file = open(parent_dir+'/repositoryData/lexicon_barrels/M_to_P.csv', 'r')
+            lex_reader = csv.DictReader(lex_file)
+            for row in lex_reader:
+                if i == row['words']:
+                    lexicon[row['id']] = row['words']
+                    lexicon_word_to_id[row['words']] = row['id']
+
+        elif i[0] in 'qrst':
+            lex_file = open(parent_dir+'/repositoryData/lexicon_barrels/Q_to_T.csv', 'r')
+            lex_reader = csv.DictReader(lex_file)
+            for row in lex_reader:
+                if i == row['words']:
+                    lexicon[row['id']] = row['words']
+                    lexicon_word_to_id[row['words']] = row['id']
+
+        elif i[0] in 'uvwx':
+            lex_file = open(parent_dir+'/repositoryData/lexicon_barrels/U_to_X.csv', 'r')
+            lex_reader = csv.DictReader(lex_file)
+            for row in lex_reader:
+                if i == row['words']:
+                    lexicon[row['id']] = row['words']
+                    lexicon_word_to_id[row['words']] = row['id']
+
+        elif i[0] in 'yz':
+            lex_file = open(parent_dir+'/repositoryData/lexicon_barrels/Y_to_Z.csv', 'r')
+            lex_reader = csv.DictReader(lex_file)
+            for row in lex_reader:
+                if i == row['words']:
+                    lexicon[row['id']] = row['words']
+                    lexicon_word_to_id[row['words']] = row['id']
+
+        else:
+            lex_file = open(parent_dir+'/repositoryData/lexicon_barrels/Other.csv', 'r')
+            lex_reader = csv.DictReader(lex_file)
+            for row in lex_reader:
+                if i == row['words']:
+                    lexicon[row['id']] = row['words']
+                    lexicon_word_to_id[row['words']] = row['id']
+    return lexicon, lexicon_word_to_id
+
+def search(query):
+    # increasing csv field size limit to ensure proper loading of data from csv files
+    maxInt = sys.maxsize
+    while True:
+        try:
+            csv.field_size_limit(maxInt)
+            break
+        except OverflowError:
+            maxInt = int(maxInt/10)
+
+    
+    characters_of_interest = ['/',',','.','-','_']
+
+    broken_query = query
+    for i in characters_of_interest:
+        if i in query:
+            broken_query = broken_query.replace(i, ' ')
+    if(not(broken_query == query)):
+        broken_query = broken_query.split()
+        lemmatized_broken_query = []
+        for i in broken_query:
+            lemmatized_broken_query.append(lemmatizer.lemmatize(i.lower()))
+        lexicon_for_broken_query = {}
+        lexicon_word_to_id_for_broken_query = {}
+
+        lexicon_for_broken_query, lexicon_word_to_id_for_broken_query = find_the_word_ids(lemmatized_broken_query)
+
+    query_list = nltk.word_tokenize(query)
+    query_list = [lemmatizer.lemmatize(w) for w in query_list]
+    lexicon= {}
+    lexicon_word_to_id = {}
+
+    lexicon, lexicon_word_to_id = find_the_word_ids(query_list)
+    
 
 
-forward_index = parent_dir + '/repositoryData/forward_index.csv'
-lexicon_file = parent_dir + '/repositoryData/lexicon.csv'
-inverted_index_file = parent_dir + '/repositoryData/inverted_index.csv'
 
-# loading lexicon into dictionary
-lexicon = {}
-with open(lexicon_file, 'r', encoding='utf-8') as lex:
-    reader = csv.DictReader(lex)
-    for row in reader:
-        lexicon[row['word']] = row['id']  
-
-
-term_frequency = defaultdict(lambda: defaultdict(int))
-document_frequency = defaultdict(int)
-
-inverted_index = {}
-# loading forward index and parsing it to create list of json objects
-parsed_rows = []
-with open(forward_index, 'r') as file:
-    reader = csv.DictReader(file)
-    i = 1
-    for row in reader:
-        doc_id = row['docId'].strip()
-        words_data = row['words'].strip()
-        doc_id_2 = doc_id
-        words_data = words_data.replace("'", '"') # replacing single quotes with double quotes to make it valid json
-        # convert the words string into a JSON object
-        words = json.loads(words_data)
-        
-        for w in words:
-            if list(w.values())[0] == 't':
-                term_frequency[doc_id][list(w.keys())[0]]+=5
-            elif list(w.values())[0] == 'i':
-                term_frequency[doc_id][list(w.keys())[0]]+=2
+    finalList = {}
+    for i in lexicon:
+        partition = int(i)%total_partitions
+        doctList = []
+        with open(parent_dir+'/repositoryData/invertedIndexBarrels/partition_'+str(partition)+'.csv', 'r') as inverted_index_file:
+            inverted_index_reader = csv.DictReader(inverted_index_file)
+            for row in inverted_index_reader:
+                if i == row['word_id']:
+                    doctList = ast.literal_eval(row['documents'])
+                    break                
+        for j in doctList:
+            if j in finalList:
+                finalList[j] += finalList[j]+doctList[j]+20
+                continue
             else:
-                term_frequency[doc_id][list(w.keys())[0]]+=1
-        words_set = set()
-        for w in words:  
-            words_set.add(list(w.keys())[0])
-        for w in words_set:
-            document_frequency[w]+=1
-        
-        # create a JSON object for the row
-        parsed_rows.append({
-            "docId": doc_id,
-            "words": words
-        })
+                finalList.update({j:doctList[j]})
+    
+    
+    if(not(broken_query == query)):
+        for i in lexicon_for_broken_query:
+            partition = int(i)%total_partitions
+            doctList = []
+            with open(parent_dir+'/repositoryData/invertedIndexBarrels/partition_'+str(partition)+'.csv', 'r') as inverted_index_file:
+                inverted_index_reader = csv.DictReader(inverted_index_file)
+                for row in inverted_index_reader:
+                    if i == row['word_id']:
+                        doctList = ast.literal_eval(row['documents'])
+                        break
+                        
+            for j in doctList:
+                if j in finalList:
+                    finalList[j] += finalList[j]+doctList[j]+20
+                    continue
+                else:
+                    finalList.update({j:doctList[j]})
+    results = sorted(finalList.items(), key=lambda x: x[1], reverse=True)
 
+    
+    repositories = load_important_stuff()
+    final_results= []
+    for row in repositories:
+        for doc in results:
+            if row == doc[0]:
+                final_results.append((row, repositories[row][0],repositories[row][1],repositories[row][2],doc[1]))
+    
+    return final_results  
 
+# Main Execution
+if __name__ == "__main__":
 
-# creating inverted index
-for row in parsed_rows:
-    document_id = row['docId']
-    words = row['words']
-    for key in words:
-        weightage = tf_idf(term_frequency[document_id][list(key.keys())[0]],len(term_frequency[document_id]),document_frequency[list(key.keys())[0]],len(parsed_rows))
-        key = list(key.keys())[0]
-        if key not in inverted_index:
-            inverted_index[key] = {}
-        if document_id not in inverted_index[key]:
-            inverted_index[key][document_id] = weightage
-            
+    # Input query
+    query = input("Write the search query:\n")
+    start_time = time.perf_counter()
 
-sorted_inverted_index = {k: inverted_index[k] for k in sorted(inverted_index)}
-with open(inverted_index_file, 'w', encoding='utf-8') as inverted_file:
-    writer = csv.writer(inverted_file)
-    writer.writerow(['word_id', 'documents'])  
-    for word_id, documents in sorted_inverted_index.items():
-        writer.writerow([word_id, documents])
+    # Search documents
+    final_results = search(query)
 
-# writing inverted index to a csv file
-with open(inverted_index_file, 'w', encoding='utf-8') as inverted_file:
-    writer = csv.writer(inverted_file)
-    writer.writerow(['word_id', 'documents'])  
-    for word_id, documents in inverted_index.items():
-        writer.writerow([word_id, documents])
+    end_time = time.perf_counter()
+    elapsed_time = end_time - start_time
+    print(f"Time taken to search: {elapsed_time} seconds")
+    # Output results
+    # for doc in final_results:
+    #     print(doc)
