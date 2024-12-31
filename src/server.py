@@ -17,8 +17,8 @@ def search_repositories():
     # Use search_algorithm module to process the query and get results
     final_results = search_algorithm.search(query)
 
-    # Format results to return to the frontend
-    results = [{"document_id": doc[0], "score": doc[1]} for doc in final_results]
+    # Format results to return to the frontend, limiting to first 100 results
+    results = [{"document_id": doc[0], "score": doc[1]} for doc in final_results[:100]]
     
     return jsonify(results)
 
