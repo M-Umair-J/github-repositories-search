@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This project implements a search engine for GitHub repositories, allowing users to search, index, and rank repositories based on keywords. The search engine is built with a Python backend and a React-based frontend. It leverages a custom indexing system to efficiently retrieve and rank relevant GitHub repositories based on user queries. The goal of this project is to create a scalable and responsive search engine that can handle large datasets, using techniques such as lexicons, forward and inverted indexes, and dynamic content addition.
+This project implements a search engine for GitHub repositories, allowing users to search, index, and rank repositories based on keywords. The search engine is built with a Python backend and a React-based frontend. It uses a custom indexing system to efficiently retrieve and rank relevant GitHub repositories based on user queries. The goal of this project is to create a scalable and responsive search engine that can handle large datasets, using techniques such as lexicons, forward and inverted indexes, and dynamic content addition.
 
 ## Key Components
 
